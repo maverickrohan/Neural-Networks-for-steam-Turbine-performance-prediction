@@ -1,0 +1,48 @@
+% Load dataset (replace 'steam_turbine_data.csv' with actual file)
+data = readtable('steam_turbine_data.csv');
+
+% Extract input features and target variable
+X = table2array(data(:, {'Inlet_Pressure', 'Outlet_Pressure', 'Inlet_Temperature', 'Mass_Flow_Rate'}));
+y = table2array(data(:, 'Efficiency'));
+
+% Normalize input features between 0 and 1
+X = normalize(X);
+
+% Split data into training (80%) and testing (20%)
+train_ratio = 0.8;
+num_train = floor(train_ratio * size(X, 1));
+
+X_train = X(1:num_train, :);
+y_train = y(1:num_train);
+
+X_test = X(num_train+1:end, :);
+y_test = y(num_train+1:end);
+
+% Define the ANN architecture
+hiddenLayerSize = [64, 32]; % Two hidden layers with 64 and 32 neurons
+net = feedforwardnet(hiddenLayerSize);
+
+% Configure training parameters
+net.trainFcn = 'trainlm'; % Levenberg-Marquardt training
+net.trainParam.epochs = 100; % Number of training epochs
+net.trainParam.lr = 0.01; % Learning rate
+
+% Train the neural network
+[net, tr] = train(net, X_train', y_train');
+
+% Predict efficiency for test set
+y_pred = net(X_test')';
+
+% Compute mean absolute error (MAE)
+mae = mean(abs(y_test - y_pred));
+
+% Plot actual vs predicted efficiency
+figure;
+scatter(y_test, y_pred, 'filled');
+xlabel('Actual Efficiency');
+ylabel('Predicted Efficiency');
+title('Actual vs Predicted Steam Turbine Efficiency');
+grid on;
+
+% Display MAE
+fprintf('Mean Absolute Error: %.4f\n', mae);
